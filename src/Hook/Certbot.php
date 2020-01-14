@@ -39,6 +39,7 @@ class Certbot
 	 */
 	public function createTXTRecordForDomain(string $domainName, string $recordValue): void
 	{
+		$domainName = $this->stripWildcardFromDomain($domainName);
 		$baseDomainName = $this->getBaseDomain($domainName);
 		$dnsService = $this->client->dnsService();
 
@@ -120,5 +121,19 @@ class Certbot
 		}
 
 		return $baseDomain;
+	}
+
+	/**
+	 * @param string $domain
+	 *
+	 * @return string
+	 */
+	private function stripWildcardFromDomain(string $domain): string
+	{
+		if (strpos($domain, '*.') === 0) {
+			return substr($domain, 2);
+		}
+
+		return $domain;
 	}
 }
