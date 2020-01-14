@@ -5,12 +5,15 @@ use App\Hook\Certbot;
 
 require __DIR__.'/vendor/autoload.php';
 
-list($command, $domain) = array_slice($argv, 1);
+list($command) = array_slice($argv, 1);
+
+$domain = getenv('CERTBOT_DOMAIN');
+$record = getenv('CERTBOT_VALIDATION');
 
 $certbot = new Certbot();
 
 if ($command === 'create') {
-	$certbot->createTXTRecordForDomain($domain, '4376834');
+	$certbot->createTXTRecordForDomain($domain, $record);
 } elseif ($command === 'delete') {
 	$certbot->deleteTXTRecordForDomain($domain);
 }

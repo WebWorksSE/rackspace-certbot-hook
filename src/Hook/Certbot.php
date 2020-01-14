@@ -8,6 +8,7 @@ use OpenCloud\Rackspace;
 class Certbot
 {
 	private CONST ACME_CHALLENGE = '_acme-challenge.';
+	private CONST RECORD_TYPE = 'TXT';
 
 	/**
 	 * @var Rackspace
@@ -16,10 +17,20 @@ class Certbot
 
 	public function __construct()
 	{
-		$this->client = new Rackspace(Rackspace::US_IDENTITY_ENDPOINT, [
-			'username' => Credentials::USER,
-			'apiKey'   => Credentials::API_KEY
-		]);
+		$this->client = new Rackspace(
+			Rackspace::US_IDENTITY_ENDPOINT,
+			[
+				'username' => Credentials::USER,
+				'apiKey'   => Credentials::API_KEY
+			],
+			[
+				Rackspace::SSL_CERT_AUTHORITY => 'system',
+				Rackspace::CURL_OPTIONS => [
+					CURLOPT_SSL_VERIFYPEER => true,
+					CURLOPT_SSL_VERIFYHOST => 2,
+				],
+			]
+		);
 	}
 
 	/**
@@ -36,13 +47,13 @@ class Certbot
 
 		$records = $domain->recordList(array(
 			'name' => self::ACME_CHALLENGE . $domainName,
-			'type' => 'TXT'
+			'type' => self::RECORD_TYPE
 		));
 
 		if (count($records) === 0) {
 			$record = $domain->record([
-				'type' => 'TXT',
-				'name' => '_acme-challenge.' . $domainName,
+				'type' => self::RECORD_TYPE,
+				'name' => self::ACME_CHALLENGE . $domainName,
 				'data' => $recordValue,
 				'ttl' => 3600
 			]);
@@ -54,10 +65,12 @@ class Certbot
 			}
 
 			$record = $domain->record($loadedRecordId);
+			$record->data = $recordValue;
 
-			$record->data = 'test456';
 			$record->update();
 		}
+
+		sleep(45);
 	}
 
 	/**
@@ -73,7 +86,7 @@ class Certbot
 
 		$records = $domain->recordList(array(
 			'name' => self::ACME_CHALLENGE . $domainName,
-			'type' => 'TXT'
+			'type' => self::RECORD_TYPE
 		));
 
 		if (count($records) > 0) {
